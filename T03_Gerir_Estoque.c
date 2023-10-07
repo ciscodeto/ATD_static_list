@@ -26,7 +26,7 @@ t_list * listCreate(int max_size) {
 }
 
 int listInsertAtPosition(t_list * list, t_product prod, int index) {
-    if (!full(list) && (index < list -> n)) {
+    if (!listIsFull(list) && (index < list -> n)) {
         for (int i = list -> n - 1; i >= index; i--) {
             list -> itens[i+1] = list -> itens[i];
         }
@@ -39,9 +39,28 @@ int listInsertAtPosition(t_list * list, t_product prod, int index) {
 }
 
 int listInsertAtEnd(t_list * list, t_product prod) {
-    if (!full(list)) {
+    if (!listIsFull(list)) {
         list -> itens[list -> n] = prod;
         list -> n++;
+        return 1;
+    }
+    return 0;
+}
+
+int listRemoveAtPosition(t_list *list, int position) {
+    if (!listIsEmpty(list) && list -> n >= position) {
+        for (int i = position ; i < list -> n ; i ++) {
+            list -> itens[i] = list -> itens[i+1];
+        }
+        list -> n--;
+        return 1;
+    }
+    return 0;
+}
+
+int listRemoveAtEnd(t_list *list) {
+    if (!listIsEmpty(list)) {
+        list -> n--;
         return 1;
     }
     return 0;
@@ -75,9 +94,7 @@ int listFree(t_list *list) {
     return 1;
 }
 
-
 // IMPLEMENTAÇÃO TAD LISTA ESTÁTICA - FIM //
-
 // USANDO A TAD LISTA DE PRODUTOS.
 
 int listFindByCode(t_list * list, int code) {
@@ -145,92 +162,194 @@ int orderByName(t_list * list) {
 
 int imprimeProduto(t_list * list, int index) {
     int c = list -> itens[index].CODE;
-    char n = list -> itens[index].name;
+    char * n = list -> itens[index].name;
     double p = list -> itens[index].price;
     int s = list -> itens[index].qtd_storage;
-    printf(">> COD: %d || PRODUTO: %s || VALOR: %.2f || EM ESTOQUE: %d\n");
+    printf("\n>> COD: %d || PRODUTO: %s || VALOR: %.2f || EM ESTOQUE: %d\n\n", c, n, p, s);
     return 1;
 }
 
-int buscarProduto(t_list * list, int code) {
-    for (int i = 0 ; i < list -> n ;) {
-        if (list -> itens[i].CODE == code){
+int buscarProduto(t_list * list, int c) {
+    for (int i = 0 ; i < list -> n ; i++) {
+        if (list -> itens[i].CODE == c){
             return i;
         }
     }
     return -1; // Não existe
 }
 
-t_product criarProduto(int code) {
+t_product criarProduto(int c) {
     t_product prod;
-    prod.CODE = code;
+    prod.CODE = c;
     printf("Digite o nome do produto (max 50 caracteres): \n>>> ");
     fgets(prod.name, sizeof(prod.name), stdin);
     printf("Digite o valor do produto: \n>>> ");
-    scanf("%lf", &prod.price);
+    scanf("%lf%*c", &prod.price);
     printf("Digite a quantidade em estoque do produto: \n>>> ");
-    scanf("%d", &prod.qtd_storage);
+    scanf("%d%*c", &prod.qtd_storage);
     return prod;
+}
+
+int consultarProduto(t_list * list) {
+    int c;
+    printf("\nDigite o codigo do produto que deseja consultar: \n>>> ");
+    scanf("%d%*c",&c);
+    int index = buscarProduto(list, c);
+
+    if (index > list -> n || index < 0) {
+        printf("\nERRO - PRODUTO INEXISTENTE...");
+        return 0;
+    }
+    if (index >= 0) {
+        imprimeProduto(list, index);
+    }
+}
+
+int atualizarProduto(t_list * list) {
+    int c;
+    printf("\nDigite o codigo do produto que deseja atualizar: \n>>> ");
+    scanf("%d%*c", &c);
+    int index = buscarProduto(list, c);
+
+    if (index >= 0) {
+        list -> itens[index] = criarProduto(c);
+        printf("\nPRODUTO ATUALIZADO COM SUCESSO!!!");
+    } else {
+        printf("\nERRO...");
+    }
 }
 
 int adicionarProduto(t_list * list) {
     int c;
-    printf("Digite o CODIGO do produto: \n >>> ");
-    scanf("%d",&c);
+    printf("\nDigite o CODIGO do produto: \n >>> ");
+    scanf("%d%*c",&c);
     int index = buscarProduto(list, c);
+    
     if(index < 0){
         t_product prod = criarProduto(c);
         if (listInsertAtEnd(list,prod)){
-            printf("PRODUTO CADASTRADO!!!");
+            printf("\nPRODUTO CADASTRADO!!!");
         } else {
-            printf("ERRO - ARMAZENAMENTO CHEIO...");
+            printf("\nERRO - ARMAZENAMENTO CHEIO...");
         }
     } else {
-        printf("ERRO - PRODUTO JA FOI CADASTRADO...");
+        printf("\nERRO - PRODUTO JA FOI CADASTRADO...");
     }
+    return 0;
 }
 
-int removerProduto(int code) {
-    int index = buscarProduto(code);
-    if (index > 0);
-        list
+int removerProduto(t_list * list) {
+    int c;
+    printf("\nDigite o CODIGO do produto que deseja remover: \n >>> ");
+    scanf("%d%*c",&c);
+
+    int index = buscarProduto(list, c);
+    if (index >= 0){
+        if (listRemoveAtPosition(list, index)) {
+            printf("\nPRODUTO REMOVIDO COM SUCESSO!!! ");
+            return 1;
+        }
+    }
+    printf("\nERRO - PRODUTO INEXISTENTE...");
+    return 0;
 }
 
-int buscarProduto(int code) {
-    
-}
-
-int menu() {
+int pothermu() {
     int op;
-    printf("\n1. Adicionar\n2. Remover\n3. Atualizar\n4. Consultar");
-    scanf("%d", &op);
+    printf("\n1. Adicionar\n2. Remover\n3. Atualizar\n4. Consultar \n5. Relatorios\n>>> ");
+    scanf("%d%*c", &op);
     return op;
 }
 
-int main(int argc, char const *argv[]) {
+int opSubmenuRelatorios() {
+    int op;
+    printf("\nLISTAR POR\n1. CODIGO\n2. Nome\n3. Quantidade\n4. Valor \n5. Estoque baixo\n6. Voltar\n>>> ");
+    scanf("%d%*c", &op);
+    return op;
+}
 
-    #define MAX_SIZE 50;
-        int option;
+int imprimirTodos(t_list * list) {
+    for (int i = 0 ; i < list -> n ; i++) {
+        imprimeProduto(list , i);
+    }
+}
 
-    
+int imprimirTodosEstoqueBaixo(t_list * list) {
+    for (int i = 0 ; i < list -> n ; i++) {
+        if (list -> itens[i].qtd_storage < 10) {
+            imprimeProduto(list , i);
+        }
+    }
+}
+
+int submenuRelatorios(t_list * list) {
+    int option;
     do
     {
-        printf("Digite uma dos processos: \n P R O D U T O :\n");
-        option = menu();
+        printf("Digite uma dos processos: \n R E L A T O R I O :\n");
+        option = opSubmenuRelatorios();
         switch (option)
         {
         case 1:
-            
+            orderByCODE(list);
+            imprimirTodos(list);
             break;
         case 2:
-            
+            orderByName(list);
+            imprimirTodos(list);
+            break;
+        case 3:
+            orderByQtd(list);
+            imprimirTodos(list);
+            break;
+        case 4:
+            orderByPrice(list);
+            imprimirTodos(list);
+            break;
+        case 5:
+            imprimirTodosEstoqueBaixo(list);
+            break;
+        case 6:
+            printf("VALEU FALOU TUDO SALVO!!!\n\n");
+        default:
+            printf("ENTRADA INVALIDA\n");
+        }
+    } while (option != 6);
+    return 0;
+}
+
+int main() {
+    int option;
+    t_list * lista_prods = listCreate(50);
+    
+    do
+    {
+        printf("\nDigite um dos processos: \n P R O D U T O :\n");
+        option = pothermu();
+        switch (option)
+        {
+        case 1:
+            adicionarProduto(lista_prods);
+            break;
+        case 2:
+            removerProduto(lista_prods);
+            break;
+        case 3:
+            atualizarProduto(lista_prods);
+            break;
+        case 4: 
+            consultarProduto(lista_prods);
+            break;
+        case 5:
+            submenuRelatorios(lista_prods);
+            break;
+        case 6:
+            printf("VALEU FALOU TUDO SALVO!!!");
             break;
         default:
             printf("ENTRADA INVALIDA");
             break;
         }
-
     } while (option != 6);
-    
     return 0;
 }
